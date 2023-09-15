@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Forticlient SSL VPN Client launching script utilizing expect.
+
+# --------------------------------------------
+# CONFIGURATION
+
+# If empty - script will take some simple logic to locate appropriate binary.
+FORTICLIENT_PATH=""
+
+# VPN Credentials
+VPN_HOST=""
+VPN_USER=""
+VPN_PASS=""
+
+# --------------------------------------------
+
+trap ctrl_c INT
+
+function ctrl_c() {
+  echo "Removing left-over files..."
+  rm -f /tmp/expect
+}
+
+
+FORTICLIENT_PATH="/opt/forticlient/vpn"
+
+cat << EOF > /tmp/expect
+#!/usr/bin/expect -f
+match_max 1000000
+set timeout -1
+spawn $FORTICLIENT_PATH -s $VPN_HOST -u $VPN_USER -p $VPN_PASS
+expect "password:"
+send -- "$VPN_PASS"
+send -- "\r"
+expect "Would you like to connect to this server?"
+send -- "Y"
+send -- "\r"
+expect "Clean up..."
+close
+EOF
+
+chmod 500 /tmp/expect
+/usr/bin/expect -f /tmp/expect
+
+rm -f /tmp/expect
